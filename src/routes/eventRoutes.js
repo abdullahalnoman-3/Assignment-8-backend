@@ -37,8 +37,13 @@ router.get('/', async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { search, category, location } = req.query;
-    const filter = { eventDate: { $gte: today } };
+    const { search, category, location, includePast, all } = req.query;
+    const shouldIncludePast = includePast === 'true' || all === 'true';
+
+    const filter = {};
+    if (!shouldIncludePast) {
+      filter.eventDate = { $gte: today };
+    }
 
     if (category && category !== 'All') {
       filter.eventType = category;
@@ -56,7 +61,8 @@ router.get('/', async (req, res) => {
       ];
     }
 
-    const events = await Event.find(filter).sort({ eventDate: 1 });
+    const sortOrder = shouldIncludePast ? { eventDate: -1 } : { eventDate: 1 };
+    const events = await Event.find(filter).sort(sortOrder);
 
     return res.status(200).json({
       success: true,
