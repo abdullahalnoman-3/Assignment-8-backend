@@ -195,26 +195,92 @@ router.post('/google', async (req, res) => {
 // GitHub Auth
 router.post('/github', async (req, res) => {
   try {
-    const { email, name, image } = req.body;
+    const { code, email, name, image } = req.body;
 
-    if (!email) {
+    let userEmail = email;
+    let userName = name;
+    let userImage = image;
+
+    if (code) {
+      const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23licEIOKFv6zd82N0';
+      const clientSecret = process.env.GITHUB_CLIENT_SECRET || 'dfac3c39a01caecb2639efe2fbf18f67da3c334c';
+
+      const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+        }),
+      });
+
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) {
+        return res.status(400).json({
+          success: false,
+          message: tokenData.error_description || 'Failed to authenticate with GitHub.',
+        });
+      }
+
+      const userRes = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          'User-Agent': 'Assignment-8-SEP',
+        },
+      });
+      const githubUser = await userRes.json();
+
+      userName = githubUser.name || githubUser.login || 'GitHub Volunteer';
+      userImage = githubUser.avatar_url;
+
+      if (githubUser.email) {
+        userEmail = githubUser.email;
+      } else {
+        const emailsRes = await fetch('https://api.github.com/user/emails', {
+          headers: {
+            Authorization: `Bearer ${tokenData.access_token}`,
+            'User-Agent': 'Assignment-8-SEP',
+          },
+        });
+        const emails = await emailsRes.json();
+        if (Array.isArray(emails)) {
+          const primaryEmail = emails.find((e) => e.primary && e.verified) || emails[0];
+          if (primaryEmail && primaryEmail.email) {
+            userEmail = primaryEmail.email;
+          }
+        }
+      }
+
+      if (!userEmail) {
+        userEmail = `${githubUser.login || 'volunteer'}@users.noreply.github.com`;
+      }
+    }
+
+    if (!userEmail) {
       return res.status(400).json({
         success: false,
         message: 'Email is required for GitHub authentication.',
       });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = userEmail.toLowerCase().trim();
     let user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       user = await User.create({
-        name: name || 'GitHub Volunteer',
+        name: userName || 'GitHub Volunteer',
         email: normalizedEmail,
         image:
-          image ||
+          userImage ||
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       });
+    } else if (userImage && (!user.image || user.image.includes('unsplash.com'))) {
+      user.image = userImage;
+      await user.save();
     }
 
     const token = signToken(user);

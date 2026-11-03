@@ -6,18 +6,21 @@ RESTful API backend for the **Social Events Platform (SEP)** built with **Node.j
 
 ## 🚀 Live API Deployment
 
-- **Live Base URL:** [https://assignment-8-backend-sep.onrender.com/api](https://assignment-8-backend-sep.onrender.com/api) *(or `http://localhost:5000/api` locally)*
-- **Health Check Endpoint:** `GET /api/health`
+- **Live Base URL:** [https://assignmentserver.hmnoman.com/api](https://assignmentserver.hmnoman.com/api)
+- **Root Health Check:** [https://assignmentserver.hmnoman.com/](https://assignmentserver.hmnoman.com/)
+- **API Health Check Endpoint:** `GET https://assignmentserver.hmnoman.com/api/health`
+- **Frontend App:** [https://assignment.hmnoman.com](https://assignment.hmnoman.com)
 
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
-- **Runtime:** Node.js (ES Modules)
+- **Runtime:** Node.js (v20+ ES Modules)
 - **Framework:** Express.js 4
 - **Database:** MongoDB Atlas (Mongoose 8)
 - **Authentication:** JWT (JSON Web Tokens) with Bearer token header authorization
 - **Security & Utilities:** `bcryptjs`, `cors`, `dotenv`
+- **Hosting / Deployment:** cPanel Phusion Passenger with custom `server.js`
 
 ---
 
@@ -38,7 +41,7 @@ RESTful API backend for the **Social Events Platform (SEP)** built with **Node.j
 |---|---|---|---|
 | GET | `/api/events/recent` | Get 6 most upcoming events (sorted by date, limit 6) | Public |
 | GET | `/api/events` | Filtered list of upcoming events (search, category, location) | Public |
-| GET | `/api/events/:id` | Single event details with live participant count | Public |
+| GET | `/api/events/:id` | Single event details with live participant count | Private / Public API |
 | POST | `/api/events` | Create new event (Rule 5: future dates only) | Private (Bearer JWT) |
 | PUT | `/api/events/:id` | Update event details (Organizer only & future dates) | Private (Bearer JWT) |
 | DELETE | `/api/events/:id` | Delete event and cascade remove registrations (Organizer only) | Private (Bearer JWT) |
@@ -58,9 +61,9 @@ RESTful API backend for the **Social Events Platform (SEP)** built with **Node.j
 Create a `.env` file in the root directory:
 ```env
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-FRONTEND_URL=http://localhost:3000
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/assignment8?retryWrites=true&w=majority
+JWT_SECRET=your_super_secret_jwt_key
+FRONTEND_URL=https://assignment.hmnoman.com
 ```
 
 ---
@@ -80,3 +83,7 @@ npm run dev
 
 Server will run on `http://localhost:5000`.
 
+---
+
+## 📄 License
+This project was developed for educational purposes as part of Assignment 8.
