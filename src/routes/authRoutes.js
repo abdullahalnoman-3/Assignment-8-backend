@@ -192,6 +192,54 @@ router.post('/google', async (req, res) => {
   }
 });
 
+// GitHub Auth
+router.post('/github', async (req, res) => {
+  try {
+    const { email, name, image } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required for GitHub authentication.',
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    let user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      user = await User.create({
+        name: name || 'GitHub Volunteer',
+        email: normalizedEmail,
+        image:
+          image ||
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      });
+    }
+
+    const token = signToken(user);
+
+    return res.status(200).json({
+      success: true,
+      message: 'GitHub authentication successful.',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      },
+    });
+  } catch (error) {
+    console.error('GitHub Auth error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'GitHub authentication failed.',
+      error: error.message,
+    });
+  }
+});
+
 // Current User Profile
 router.get('/me', requireAuth, async (req, res) => {
   try {
